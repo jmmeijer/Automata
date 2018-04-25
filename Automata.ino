@@ -13,7 +13,10 @@ unsigned int pingSpeed = 50;
 unsigned long pingTimer;
 
 void setup() {
+  Serial.begin(9600);
+  Serial.println("Automata Test!");
 
+  
 }
 
 void loop() {
