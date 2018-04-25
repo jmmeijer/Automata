@@ -12,7 +12,7 @@
 unsigned int pingSpeed = 50;
 unsigned long pingTimer;
 
-Servo myservo;
+Servo servo1;
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 Adafruit_DCMotor *motor1 = AFMS.getMotor(1);
 Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
@@ -24,8 +24,8 @@ void setup() {
 
   pingTimer = millis();
 
-  myservo.attach(9);
-  myservo.write(90);
+  servo1.attach(9);
+  servo1.write(90);
   
 }
 
