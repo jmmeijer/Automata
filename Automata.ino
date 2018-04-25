@@ -12,6 +12,12 @@
 unsigned int pingSpeed = 50;
 unsigned long pingTimer;
 
+Servo myservo;
+Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
+Adafruit_DCMotor *motor1 = AFMS.getMotor(1);
+Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
+NewPing sonar(TRIG_PIN, ECHO_PIN, MAX_DISTANCE);
+
 void setup() {
   Serial.begin(9600);
   Serial.println("Automata Test!");
