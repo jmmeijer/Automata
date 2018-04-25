@@ -23,6 +23,9 @@ void setup() {
   Serial.println("Automata Test!");
 
   pingTimer = millis();
+
+  myservo.attach(9);
+  myservo.write(90);
   
 }
 
