@@ -22,6 +22,7 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Automata Test!");
 
+  pingTimer = millis();
   
 }
 
