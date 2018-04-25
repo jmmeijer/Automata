@@ -26,7 +26,15 @@ void setup() {
 
   servo1.attach(9);
   servo1.write(90);
-  
+
+  AFMS.begin();
+  motor1->setSpeed(150);
+  motor1->run(FORWARD);
+  motor1->run(RELEASE);
+
+  motor2->setSpeed(150);
+  motor2->run(FORWARD);
+  motor2->run(RELEASE);
 }
 
 void loop() {
