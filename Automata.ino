@@ -12,11 +12,14 @@
 unsigned int pingSpeed = 50;
 unsigned long pingTimer;
 
+byte gammatable[256];
+
 Servo servo1;
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 Adafruit_DCMotor *motor1 = AFMS.getMotor(1);
 Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
 NewPing sonar(TRIG_PIN, ECHO_PIN, MAX_DISTANCE);
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 
 void setup() {
   Serial.begin(9600);
