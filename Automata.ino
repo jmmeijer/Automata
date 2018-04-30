@@ -22,7 +22,8 @@ unsigned long pingTimer;
 
 byte gammatable[256];
 
-Servo servo1;
+Servo servoPan;
+Servo servoTilt;
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 Adafruit_DCMotor *motor1 = AFMS.getMotor(1);
 Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
@@ -37,8 +38,10 @@ void setup() {
 
   pinMode(buttonPin, INPUT);
 
-  servo1.attach(9);
-  servo1.write(90);
+  servoPan.attach(9,450,2450);
+  servoTilt.attach(10,500,2400);
+  servoPan.write(90);
+  servoTilt.write(90);
 
   AFMS.begin();
   motor1->setSpeed(150);
@@ -63,6 +66,7 @@ void loop() {
       buttonState = reading;
       if (buttonState == HIGH) {
         // do something
+        Serial.println("Button pressed: Start!");
       }
     }
   }
