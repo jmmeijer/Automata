@@ -9,6 +9,10 @@
 #define ECHO_PIN A1
 #define MAX_DISTANCE 53
 
+#define PIXEL_PIN 6
+
+#define commonAnode true
+
 const int buttonPin = 2;
 
 int buttonState;
@@ -27,8 +31,9 @@ Servo servoTilt;
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 Adafruit_DCMotor *motor1 = AFMS.getMotor(1);
 Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
-NewPing sonar(TRIG_PIN, ECHO_PIN, MAX_DISTANCE);
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
+Adafruit_NeoPixel pixel = Adafruit_NeoPixel(1, PIXEL_PIN, NEO_RGB + NEO_KHZ800);
+NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
 
 void setup() {
   Serial.begin(9600);
@@ -39,9 +44,9 @@ void setup() {
   pinMode(buttonPin, INPUT);
 
   servoPan.attach(9,450,2450);
-  servoTilt.attach(10,500,2400);
+  //servoTilt.attach(10,500,2400);
   servoPan.write(90);
-  servoTilt.write(90);
+  //servoTilt.write(90);
 
   AFMS.begin();
   motor1->setSpeed(150);
@@ -51,6 +56,9 @@ void setup() {
   motor2->setSpeed(150);
   motor2->run(FORWARD);
   motor2->run(RELEASE);
+
+  pixel.begin();
+  pixel.show();
 }
 
 void loop() {
@@ -67,6 +75,7 @@ void loop() {
       if (buttonState == HIGH) {
         // do something
         Serial.println("Button pressed: Start!");
+        setGreenLED();
       }
     }
   }
@@ -74,3 +83,9 @@ void loop() {
   lastButtonState = reading;
   
 }
+
+void setGreenLED(){
+  pixel.setPixelColor(0, 0, 255, 0);
+  pixel.show();
+}
+
