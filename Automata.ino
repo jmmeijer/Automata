@@ -51,13 +51,6 @@ void setup() {
 }
 
 void loop() {
-  buttonState = digitalRead(buttonPin);
-
-  if (buttonState == HIGH) {
-    
-  } else {
-    
-  }
 
   int reading = digitalRead(buttonPin);
   
@@ -75,6 +68,5 @@ void loop() {
   }
 
   lastButtonState = reading;
-
   
 }
