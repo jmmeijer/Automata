@@ -9,6 +9,14 @@
 #define ECHO_PIN A1
 #define MAX_DISTANCE 53
 
+const int buttonPin = 2;
+
+int buttonState;
+int lastButtonState = LOW;
+
+unsigned long lastDebounceTime = 0;
+unsigned long debounceDelay = 50;
+
 unsigned int pingSpeed = 50;
 unsigned long pingTimer;
 
@@ -27,6 +35,8 @@ void setup() {
 
   pingTimer = millis();
 
+  pinMode(buttonPin, INPUT);
+
   servo1.attach(9);
   servo1.write(90);
 
@@ -41,5 +51,30 @@ void setup() {
 }
 
 void loop() {
+  buttonState = digitalRead(buttonPin);
 
+  if (buttonState == HIGH) {
+    
+  } else {
+    
+  }
+
+  int reading = digitalRead(buttonPin);
+  
+  if (reading != lastButtonState) {
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading != buttonState) {
+      buttonState = reading;
+      if (buttonState == HIGH) {
+        // do something
+      }
+    }
+  }
+
+  lastButtonState = reading;
+
+  
 }
