@@ -1,3 +1,4 @@
+#include <FiniteStateMachine.h>
 #include <Wire.h>
 #include <Servo.h>
 #include <Adafruit_MotorShield.h>
@@ -34,6 +35,12 @@ Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 Adafruit_NeoPixel pixel = Adafruit_NeoPixel(1, PIXEL_PIN, NEO_RGB + NEO_KHZ800);
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
+
+void noopUpdate();
+
+State noop = State(noopUpdate);
+
+FSM stateMachine = FSM(noop);
 
 void setup() {
   Serial.begin(9600);
@@ -90,6 +97,12 @@ void loop() {
 
   lastButtonState = reading;
   
+  stateMachine.update();
+}
+
+void noopUpdate() {
+  Serial.println("noopUpdate");
+  //this function gets called as long as the user have not pressed any buttons after startup
 }
 
 void setGreenLED(){
