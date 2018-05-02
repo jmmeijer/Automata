@@ -57,11 +57,19 @@ void setup() {
   motor2->run(FORWARD);
   motor2->run(RELEASE);
 
+  if (tcs.begin()) {
+   // Serial.println("Found sensor");
+  } else {
+    //Serial.println("No TCS34725 found ... check your connections");
+    while (1); // halt!
+  }
+
   pixel.begin();
   pixel.show();
 }
 
 void loop() {
+  tcs.setInterrupt(true);
 
   int reading = digitalRead(buttonPin);
   
