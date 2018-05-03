@@ -79,6 +79,20 @@ void setup() {
 
   pixel.begin();
   pixel.show();
+
+  for (int i=0; i<256; i++) {
+    float x = i;
+    x /= 255;
+    x = pow(x, 2.5);
+    x *= 255;
+    
+    if (commonAnode) {
+      gammatable[i] = 255 - x;
+    } else {
+      gammatable[i] = x;      
+    }
+    Serial.println(gammatable[i]);
+  }
 }
 
 void loop() {
