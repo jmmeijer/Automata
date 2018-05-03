@@ -6,15 +6,15 @@
 #include <Adafruit_NeoPixel.h>
 #include <NewPing.h>
 
-#define TRIGGER_PIN A0
-#define ECHO_PIN A1
-#define MAX_DISTANCE 53
+const byte triggerPin = A0;
+const byte echoPin = A1;
+const byte maxDistance = 53;
 
-#define PIXEL_PIN 6
+const byte pixelPin = 6;
 
 #define commonAnode true
 
-const int buttonPin = 2;
+const byte buttonPin = 2;
 
 int buttonState;
 int lastButtonState = LOW;
@@ -33,8 +33,8 @@ Adafruit_MotorShield AFMS = Adafruit_MotorShield();
 Adafruit_DCMotor *motor1 = AFMS.getMotor(1);
 Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
-Adafruit_NeoPixel pixel = Adafruit_NeoPixel(1, PIXEL_PIN, NEO_RGB + NEO_KHZ800);
-NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
+Adafruit_NeoPixel pixel = Adafruit_NeoPixel(1, pixelPin, NEO_RGB + NEO_KHZ800);
+NewPing sonar(triggerPin, echoPin, maxDistance);
 
 void noopUpdate();
 void setPixelGreen();
