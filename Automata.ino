@@ -146,7 +146,7 @@ void setPixelRed(){
 }
 
 void forward(int speed, int duration){
-  currentTime = millis();
+  int currentTime = millis();
 
   while(millis() > currentTime + duration){
     motor1->run(FORWARD);
