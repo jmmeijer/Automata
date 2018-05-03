@@ -37,6 +37,12 @@ Adafruit_NeoPixel pixel = Adafruit_NeoPixel(1, PIXEL_PIN, NEO_RGB + NEO_KHZ800);
 NewPing sonar(TRIGGER_PIN, ECHO_PIN, MAX_DISTANCE);
 
 void noopUpdate();
+void setPixelGreen();
+
+State off = State(noopUpdate);
+State green = State(setPixelGreen);
+
+FSM fsmLED = FSM(off);
 
 State noop = State(noopUpdate);
 
@@ -90,23 +96,38 @@ void loop() {
       if (buttonState == HIGH) {
         // do something
         Serial.println("Button pressed: Start!");
-        setGreenLED();
+        fsmLED.transitionTo(green);
       }
     }
   }
 
   lastButtonState = reading;
-  
+
+  fsmLED.update();
   stateMachine.update();
 }
 
 void noopUpdate() {
-  Serial.println("noopUpdate");
   //this function gets called as long as the user have not pressed any buttons after startup
 }
 
-void setGreenLED(){
+void setPixelOff(){
+  pixel.setPixelColor(0, 0, 0, 0);
+  pixel.show();
+}
+
+void setPixelGreen(){
   pixel.setPixelColor(0, 0, 255, 0);
+  pixel.show();
+}
+
+void setPixelYellow(){
+  pixel.setPixelColor(0, 255, 255, 0);
+  pixel.show();
+}
+
+void setPixelRed(){
+  pixel.setPixelColor(0, 255, 055, 0);
   pixel.show();
 }
 
