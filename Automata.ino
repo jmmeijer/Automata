@@ -12,7 +12,7 @@ const byte maxDistance = 53;
 
 const byte pixelPin = 6;
 
-#define commonAnode true
+const bool commonAnode = true;
 
 const byte buttonPin = 2;
 
