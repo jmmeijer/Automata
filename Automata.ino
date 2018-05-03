@@ -131,3 +131,16 @@ void setPixelRed(){
   pixel.show();
 }
 
+void forward(int speed, int duration){
+  currentTime = millis();
+
+  while(millis() > currentTime + duration){
+    motor1->run(FORWARD);
+    motor2->run(FORWARD);
+    motor1->setSpeed(speed);
+    motor2->setSpeed(speed);
+  }
+  duration = 0;
+  motor1->run(RELEASE);
+  motor2->run(RELEASE);
+}
