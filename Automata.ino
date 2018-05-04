@@ -6,6 +6,7 @@
 #include <Adafruit_NeoPixel.h>
 #include <NewPing.h>
 
+const byte iterations = 10;
 const byte triggerPin = A0;
 const byte echoPin = A1;
 const byte maxDistance = 53;
@@ -22,8 +23,12 @@ int lastButtonState = LOW;
 unsigned long lastDebounceTime = 0;
 unsigned long debounceDelay = 50;
 
-unsigned int pingSpeed = 50;
-unsigned long pingTimer;
+unsigned int pingInterval = 50;
+unsigned long pingTimer[iterations];
+unsigned int cm[iterations];
+uint8_t currentIteration = 0;
+
+bool scanned = false;
 
 byte gammatable[256];
 
@@ -37,24 +42,35 @@ Adafruit_NeoPixel pixel = Adafruit_NeoPixel(1, pixelPin, NEO_RGB + NEO_KHZ800);
 NewPing sonar(triggerPin, echoPin, maxDistance);
 
 void noopUpdate();
+void scanEnter();
+void scanUpdate();
+
 void setPixelGreen();
+void setPixelYellow();
+void setPixelRed();
 
 State off = State(noopUpdate);
 State green = State(setPixelGreen);
+State yellow = State(setPixelYellow);
+State red = State(setPixelRed);
 
-FSM fsmLED = FSM(off);
+FSM ledStateMachine = FSM(off);
 
 State noop = State(noopUpdate);
+State scan = State(scanEnter, scanUpdate, NULL);
 
 FSM stateMachine = FSM(noop);
 
 void setup() {
   Serial.begin(9600);
   Serial.println("Automata Test!");
-
-  pingTimer = millis();
-
+  
   pinMode(buttonPin, INPUT);
+
+  pingTimer[0] = millis() + 75;
+  for (uint8_t i = 1; i < iterations; i++){
+    pingTimer[i] = pingTimer[i - 1] + pingInterval;
+  }
 
   servoPan.attach(9,450,2450);
   //servoTilt.attach(10,500,2400);
@@ -97,32 +113,77 @@ void setup() {
 
 void loop() {
   tcs.setInterrupt(true);
-
+  
   int reading = digitalRead(buttonPin);
+
+  if(stateMachine.isInState( scan )){
+
+
+
+  }
   
   if (reading != lastButtonState) {
     lastDebounceTime = millis();
   }
-
   if ((millis() - lastDebounceTime) > debounceDelay) {
     if (reading != buttonState) {
       buttonState = reading;
       if (buttonState == HIGH) {
         // do something
         Serial.println("Button pressed: Start!");
-        fsmLED.transitionTo(green);
+        stateMachine.transitionTo(scan);
       }
     }
   }
-
   lastButtonState = reading;
 
-  fsmLED.update();
+  ledStateMachine.update();
   stateMachine.update();
 }
 
 void noopUpdate() {
   //this function gets called as long as the user have not pressed any buttons after startup
+}
+
+void scanEnter(){
+
+  Serial.println("Scan Enter");
+  
+  ledStateMachine.transitionTo(yellow);
+  
+
+}
+
+void scanUpdate() {
+
+    if (!scanned){
+        for (uint8_t i = 0; i < iterations; i++) {
+          
+
+          
+        if (millis() >= pingTimer[i]) {
+/*
+          int currentPos = i*18;
+          for (int pos = currentPos; pos <= currentPos+18; pos += 1) {
+            servoPan.write(pos);
+            delay(15);
+          }
+*/
+          
+          pingTimer[i] += pingInterval * iterations;
+          if (i == 0 && currentIteration == iterations - 1) oneSensorCycle();
+          sonar.timer_stop();
+          currentIteration = i;
+          cm[currentIteration] = 0;
+          sonar.ping_timer(echoCheck);
+        }
+        
+      }
+      //scanned = true;
+    }else{
+      Serial.println("scanned!");
+    }
+  
 }
 
 void setPixelOff(){
@@ -136,13 +197,43 @@ void setPixelGreen(){
 }
 
 void setPixelYellow(){
-  pixel.setPixelColor(0, 255, 255, 0);
+  pixel.setPixelColor(0, 255, 191, 0);
   pixel.show();
 }
 
 void setPixelRed(){
   pixel.setPixelColor(0, 255, 055, 0);
   pixel.show();
+}
+
+void echoCheck() {
+  if (sonar.check_timer()){
+    cm[currentIteration] = sonar.ping_result / US_ROUNDTRIP_CM;
+    Serial.print(currentIteration);
+    Serial.print("Ping: ");
+    Serial.print(sonar.ping_result / US_ROUNDTRIP_CM);
+    Serial.println("cm");
+  }
+}
+
+void oneSensorCycle() {
+
+  unsigned int uS[iterations];
+  uint8_t smallest = cm[0];
+  uint8_t it = iterations;
+  for (uint8_t i = 0; i < it; i++) {
+    if (cm[i] != NO_ECHO) {
+      if (cm[i] > 0 && cm[i] < smallest) {
+          smallest = cm[i];
+      }
+    } else it--;
+  }
+  
+  Serial.print("smallest: ");
+  Serial.print(smallest);
+  Serial.println("cm");
+
+  memset(cm, 0, sizeof(cm));
 }
 
 void forward(int speed, int duration){
