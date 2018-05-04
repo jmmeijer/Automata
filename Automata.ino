@@ -107,7 +107,6 @@ void setup() {
     } else {
       gammatable[i] = x;      
     }
-    Serial.println(gammatable[i]);
   }
 }
 
