@@ -17,6 +17,9 @@ const bool commonAnode = true;
 
 const byte buttonPin = 2;
 
+const byte interruptPin = 3;
+volatile byte state = LOW;
+
 int buttonState;
 int lastButtonState = LOW;
 
@@ -75,6 +78,9 @@ void setup() {
   Serial.println("Automata Test!");
   
   pinMode(buttonPin, INPUT);
+
+  pinMode(interruptPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), trigger, CHANGE);
 
   pingTimer[0] = millis() + 75;
   for (uint8_t i = 1; i < iterations; i++){
@@ -227,6 +233,18 @@ void setPixelYellow(){
 void setPixelRed(){
   pixel.setPixelColor(0, 255, 055, 0);
   pixel.show();
+}
+
+void trigger() {
+  state = digitalRead(interruptPin);
+  if (state == HIGH)
+  {
+    Serial.println("LineTracker is on the line");
+  }
+  else if (state == LOW)
+  {
+    Serial.println("Linetracker is not on the line");
+  }
 }
 
 void echoCheck() {
