@@ -9,7 +9,7 @@
 const byte iterations = 10;
 const byte triggerPin = A0;
 const byte echoPin = A1;
-const byte maxDistance = 53;
+const byte maxDistance = 50;
 
 const byte pixelPin = 6;
 
@@ -29,6 +29,7 @@ unsigned int cm[iterations];
 uint8_t currentIteration = 0;
 
 bool scanned = false;
+uint8_t closestTarget = 0;
 
 byte gammatable[256];
 
@@ -44,22 +45,30 @@ NewPing sonar(triggerPin, echoPin, maxDistance);
 void noopUpdate();
 void scanEnter();
 void scanUpdate();
+void exitScan();
 
+void setPixelOff();
 void setPixelGreen();
 void setPixelYellow();
 void setPixelRed();
 
+void forwardUpdate();
+
 State off = State(noopUpdate);
-State green = State(setPixelGreen);
-State yellow = State(setPixelYellow);
-State red = State(setPixelRed);
+State green = State(setPixelGreen, NULL, setPixelOff);
+State yellow = State(setPixelYellow, NULL, setPixelOff);
+State red = State(setPixelRed, NULL, setPixelOff);
 
 FSM ledStateMachine = FSM(off);
 
 State noop = State(noopUpdate);
-State scan = State(scanEnter, scanUpdate, NULL);
+State scan = State(scanEnter, scanUpdate, exitScan);
 
 FSM stateMachine = FSM(noop);
+
+State navigate = State(forwardUpdate);
+
+FSM motorStateMachine = FSM(noop);
 
 void setup() {
   Serial.begin(9600);
@@ -115,11 +124,7 @@ void loop() {
   
   int reading = digitalRead(buttonPin);
 
-  if(stateMachine.isInState( scan )){
 
-
-
-  }
   
   if (reading != lastButtonState) {
     lastDebounceTime = millis();
@@ -130,14 +135,24 @@ void loop() {
       if (buttonState == HIGH) {
         // do something
         Serial.println("Button pressed: Start!");
-        stateMachine.transitionTo(scan);
+        
+        if(stateMachine.isInState( noop )){
+      
+          stateMachine.transitionTo(scan);
+      
+        }else{
+          stateMachine.transitionTo(noop);
+        }
+        
+        
       }
     }
   }
   lastButtonState = reading;
 
-  ledStateMachine.update();
   stateMachine.update();
+  ledStateMachine.update();
+  motorStateMachine.update();
 }
 
 void noopUpdate() {
@@ -145,44 +160,53 @@ void noopUpdate() {
 }
 
 void scanEnter(){
-
   Serial.println("Scan Enter");
-  
-  ledStateMachine.transitionTo(yellow);
-  
-
+  ledStateMachine.immediateTransitionTo(yellow);
 }
 
 void scanUpdate() {
 
     if (!scanned){
+      
         for (uint8_t i = 0; i < iterations; i++) {
           
-
-          
-        if (millis() >= pingTimer[i]) {
-/*
           int currentPos = i*18;
+          Serial.println(currentPos);
           for (int pos = currentPos; pos <= currentPos+18; pos += 1) {
+            //Serial.println(pos);
             servoPan.write(pos);
             delay(15);
           }
-*/
           
+          
+        if (millis() >= pingTimer[i]) {
           pingTimer[i] += pingInterval * iterations;
           if (i == 0 && currentIteration == iterations - 1) oneSensorCycle();
           sonar.timer_stop();
           currentIteration = i;
           cm[currentIteration] = 0;
+          Serial.print("Sending Ping");
+          Serial.println(currentIteration);
           sonar.ping_timer(echoCheck);
+          delay(pingInterval);
         }
         
       }
-      //scanned = true;
+
+      //pointTurn("left",180);
+      //stopMotors();
+      //
     }else{
+      stateMachine.immediateTransitionTo(noop);
+      motorStateMachine.transitionTo(navigate);
       Serial.println("scanned!");
+      
     }
   
+}
+
+void exitScan(){
+  servoPan.write(90);
 }
 
 void setPixelOff(){
@@ -218,21 +242,52 @@ void echoCheck() {
 void oneSensorCycle() {
 
   unsigned int uS[iterations];
-  uint8_t smallest = cm[0];
+  uint8_t smallest = 100;
   uint8_t it = iterations;
   for (uint8_t i = 0; i < it; i++) {
+    Serial.print(i);
+    Serial.print(" iteration has ");
+    Serial.println(cm[i]);
     if (cm[i] != NO_ECHO) {
       if (cm[i] > 0 && cm[i] < smallest) {
           smallest = cm[i];
       }
     } else it--;
   }
-  
+  if(smallest > 0 && smallest < 100){
+    scanned = true;
+    closestTarget = smallest;
+  }
   Serial.print("smallest: ");
   Serial.print(smallest);
   Serial.println("cm");
 
   memset(cm, 0, sizeof(cm));
+}
+
+void forwardUpdate(){
+
+  //Serial.print(closestTarget);
+
+  if(closestTarget > 0){
+
+    int duration = closestTarget / 0.055;
+
+    forward(255, duration);
+    stopMotors();
+    closestTarget = 0;
+
+
+    
+  }else{
+    pointTurn("left",180);
+    stopMotors();
+delay(1000);
+    pointTurn("right",180);
+    stopMotors();
+delay(1000);
+  }
+  
 }
 
 void forward(int speed, int duration){
@@ -247,4 +302,37 @@ void forward(int speed, int duration){
   duration = 0;
   motor1->run(RELEASE);
   motor2->run(RELEASE);
+}
+/*w2
+ * snelheid x tijd = afstand
+ * afstand / snelheid = tijd
+ * afstand / tijd = snelheid
+ * 
+ * Afstand tussen midden van wielen: 15,3 cm
+ * Omtrek point turn is 15,3 * PI = 48,07 cm
+ * Motor max ~= 150 RPM
+ * nauwkeurigheid op 10 graden
+ */
+void pointTurn(String direction, int degrees){
+  //Serial.println(direction);
+  //Serial.println(degrees);
+  if(direction == "right"){
+    motor1->run(FORWARD);
+    motor2->run(BACKWARD);
+  }else if(direction == "left"){
+    motor1->run(BACKWARD);
+    motor2->run(FORWARD);
+  }
+  for(int i=0;i<degrees;i+=(degrees/10)){
+    //Serial.println(i);
+    motor1->setSpeed(128);
+    motor2->setSpeed(128);
+    delay(55);
+  }
+}
+
+void stopMotors(){
+  motor1->run(RELEASE);
+  motor2->run(RELEASE);
+  delay(1000);
 }
