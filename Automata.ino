@@ -9,7 +9,7 @@
 const byte iterations = 10;
 const byte triggerPin = A0;
 const byte echoPin = A1;
-const byte maxDistance = 50;
+const byte maxDistance = 50; // TODO change to variable to increase scanning distance after fails
 
 const byte pixelPin = 6;
 
@@ -25,6 +25,8 @@ int lastButtonState = LOW;
 
 unsigned long lastDebounceTime = 0;
 unsigned long debounceDelay = 50;
+
+unsigned long currentMillis;
 
 unsigned int pingInterval = 50;
 unsigned long pingTimer[iterations];
@@ -55,7 +57,9 @@ void setPixelGreen();
 void setPixelYellow();
 void setPixelRed();
 
+void forwardEnter();
 void forwardUpdate();
+void forwardExit();
 
 State off = State(noopUpdate);
 State green = State(setPixelGreen, NULL, setPixelOff);
@@ -69,7 +73,7 @@ State scan = State(scanEnter, scanUpdate, scanExit);
 
 FSM stateMachine = FSM(noop);
 
-State navigate = State(NULL, forwardUpdate, forwardExit);
+State navigate = State(forwardEnter, forwardUpdate, forwardExit);
 
 FSM motorStateMachine = FSM(noop);
 
@@ -283,25 +287,53 @@ void oneSensorCycle() {
   memset(cm, 0, sizeof(cm));
 }
 
+void forwardEnter(){
+
+  currentMillis = millis();
+
+  Serial.print("currentMillis: ");
+  Serial.println(currentMillis);
+
+}
+
+/*
+ * https://tomblanch.wordpress.com/2013/07/18/working-with-arduino-millis/
+ */
 void forwardUpdate(){
+
 
   Serial.print("closestTarget: ");
   Serial.println(closestTarget);
 
-  if(closestTarget > 0){
-
-    int duration = closestTarget / 0.055;
+  //if(closestTarget > 0){ //TODO: move logic to superFSM
+  int duration = closestTarget / 0.055;
     
   Serial.print("duration: ");
   Serial.println(duration);
-  
-    forward(255, duration);
-    stopMotors();
-    //closestTarget = 0;
+    //forward(255, duration);
 
-
+  while(millis() - currentMillis < duration){
     
-  }else{
+    Serial.print("millis: ");
+    Serial.println(millis());
+    Serial.println(currentMillis + duration);
+    
+    motor1->run(FORWARD);
+    motor2->run(FORWARD);
+    motor1->setSpeed(255);
+    motor2->setSpeed(255);
+    //delay(10);
+  }
+
+  motorStateMachine.transitionTo(noop);
+
+  duration = 0;
+  closestTarget = 0;
+    
+    //stopMotors();
+    //closestTarget = 0;
+    
+  //}else{
     /*
     pointTurn("left",180);
     stopMotors();
@@ -310,25 +342,30 @@ delay(1000);
     stopMotors();
 delay(1000);
 */
-  }
+  //}
   
 }
 
+void forwardExit(){
+  // TODO: Braking
+  motor1->run(RELEASE);
+  motor2->run(RELEASE);
+}
+
+
 void forward(int speed, int duration){
-  unsigned long currentMillis = millis();
-
-  Serial.print("currentMillis: ");
-  Serial.println(currentMillis);
-
+/*
   while(millis() > currentMillis + duration){
     motor1->run(FORWARD);
     motor2->run(FORWARD);
     motor1->setSpeed(speed);
     motor2->setSpeed(speed);
   }
+
   duration = 0;
-  motor1->run(RELEASE);
-  motor2->run(RELEASE);
+  closestTarget = 0;
+
+*/
 }
 /*w2
  * snelheid x tijd = afstand
