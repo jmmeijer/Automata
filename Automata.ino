@@ -33,6 +33,7 @@ unsigned long pingTimer[iterations];
 unsigned int cm[iterations];
 uint8_t currentIteration = 0;
 
+unsigned int orientation = 0;
 bool scanned = false;
 uint8_t closestTarget = 0;
 
