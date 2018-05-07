@@ -48,7 +48,7 @@ NewPing sonar(triggerPin, echoPin, maxDistance);
 void noopUpdate();
 void scanEnter();
 void scanUpdate();
-void exitScan();
+void scanExit();
 
 void setPixelOff();
 void setPixelGreen();
@@ -65,11 +65,11 @@ State red = State(setPixelRed, NULL, setPixelOff);
 FSM ledStateMachine = FSM(off);
 
 State noop = State(noopUpdate);
-State scan = State(scanEnter, scanUpdate, exitScan);
+State scan = State(scanEnter, scanUpdate, scanExit);
 
 FSM stateMachine = FSM(noop);
 
-State navigate = State(forwardUpdate);
+State navigate = State(NULL, forwardUpdate, forwardExit);
 
 FSM motorStateMachine = FSM(noop);
 
@@ -211,7 +211,7 @@ void scanUpdate() {
   
 }
 
-void exitScan(){
+void scanExit(){
   servoPan.write(90);
 }
 
@@ -285,33 +285,42 @@ void oneSensorCycle() {
 
 void forwardUpdate(){
 
-  //Serial.print(closestTarget);
+  Serial.print("closestTarget: ");
+  Serial.println(closestTarget);
 
   if(closestTarget > 0){
 
     int duration = closestTarget / 0.055;
-
+    
+  Serial.print("duration: ");
+  Serial.println(duration);
+  
     forward(255, duration);
     stopMotors();
-    closestTarget = 0;
+    //closestTarget = 0;
 
 
     
   }else{
+    /*
     pointTurn("left",180);
     stopMotors();
 delay(1000);
     pointTurn("right",180);
     stopMotors();
 delay(1000);
+*/
   }
   
 }
 
 void forward(int speed, int duration){
-  int currentTime = millis();
+  unsigned long currentMillis = millis();
 
-  while(millis() > currentTime + duration){
+  Serial.print("currentMillis: ");
+  Serial.println(currentMillis);
+
+  while(millis() > currentMillis + duration){
     motor1->run(FORWARD);
     motor2->run(FORWARD);
     motor1->setSpeed(speed);
