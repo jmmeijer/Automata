@@ -34,8 +34,11 @@ unsigned int cm[iterations];
 uint8_t currentIteration = 0;
 
 unsigned int orientation = 0;
+unsigned int targetDegrees = 0;
+
 bool scanned = false;
 uint8_t closestTarget = 0;
+
 
 byte gammatable[256];
 
@@ -62,6 +65,10 @@ void forwardEnter();
 void forwardUpdate();
 void forwardExit();
 
+void pointTurnEnter();
+void pointTurnUpdate();
+void pointTurnExit();
+
 State off = State(noopUpdate);
 State green = State(setPixelGreen, NULL, setPixelOff);
 State yellow = State(setPixelYellow, NULL, setPixelOff);
@@ -75,6 +82,7 @@ State scan = State(scanEnter, scanUpdate, scanExit);
 FSM stateMachine = FSM(noop);
 
 State navigate = State(forwardEnter, forwardUpdate, forwardExit);
+State pointTurn = State(pointTurnEnter, pointTurnUpdate, pointTurnExit);
 
 FSM motorStateMachine = FSM(noop);
 
@@ -178,16 +186,21 @@ void scanEnter(){
 void scanUpdate() {
 
     if (!scanned){
+
+      targetDegrees = 18;
       
         for (uint8_t i = 0; i < iterations; i++) {
           
           int currentPos = i*18;
           Serial.println(currentPos);
-          for (int pos = currentPos; pos <= currentPos+18; pos += 1) {
+          for (int pos = currentPos; pos <= currentPos+18; pos += 18) {
             //Serial.println(pos);
-            servoPan.write(pos);
-            delay(15);
+            //servoPan.write(pos);
+            //delay(15);
+            motorStateMachine.transitionTo(pointTurn);
           }
+         
+
           
           
         if (millis() >= pingTimer[i]) {
@@ -204,12 +217,13 @@ void scanUpdate() {
         
       }
 
+      
       //pointTurn("left",180);
       //stopMotors();
       //
     }else{
       stateMachine.immediateTransitionTo(noop);
-      motorStateMachine.transitionTo(navigate);
+      //motorStateMachine.transitionTo(pointTurn);
       Serial.println("scanned!");
       
     }
@@ -302,7 +316,6 @@ void forwardEnter(){
  */
 void forwardUpdate(){
 
-
   Serial.print("closestTarget: ");
   Serial.println(closestTarget);
 
@@ -368,7 +381,7 @@ void forward(int speed, int duration){
 
 */
 }
-/*w2
+/*
  * snelheid x tijd = afstand
  * afstand / snelheid = tijd
  * afstand / tijd = snelheid
@@ -378,22 +391,32 @@ void forward(int speed, int duration){
  * Motor max ~= 150 RPM
  * nauwkeurigheid op 10 graden
  */
-void pointTurn(String direction, int degrees){
-  //Serial.println(direction);
-  //Serial.println(degrees);
-  if(direction == "right"){
+void pointTurnEnter(){
+  Serial.print("targetDegrees: ");
+  Serial.println(targetDegrees);
+  
+  if( targetDegrees > 0 && targetDegrees <= 180 ){
     motor1->run(FORWARD);
     motor2->run(BACKWARD);
-  }else if(direction == "left"){
+  }else if( targetDegrees > 180 && targetDegrees <= 360){
     motor1->run(BACKWARD);
     motor2->run(FORWARD);
   }
-  for(int i=0;i<degrees;i+=(degrees/10)){
+}
+
+void pointTurnUpdate(){
+  for(int i=orientation;i<targetDegrees;i+=(targetDegrees/10)){
     //Serial.println(i);
     motor1->setSpeed(128);
     motor2->setSpeed(128);
     delay(55);
   }
+  motorStateMachine.immediateTransitionTo(noop);
+}
+
+void pointTurnExit(){
+  motor1->run(RELEASE);
+  motor2->run(RELEASE);
 }
 
 void stopMotors(){
