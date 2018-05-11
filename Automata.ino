@@ -6,6 +6,13 @@
 #include <Adafruit_NeoPixel.h>
 #include <NewPing.h>
 
+/*
+ * Robot settings
+ */
+const byte wheelDiameter = 7;
+const byte wheelRadius = wheelDiameter/2;
+const byte distanceBetweenWheels = 153;
+
 const byte iterations = 10;
 const byte triggerPin = A0;
 const byte echoPin = A1;
@@ -39,7 +46,6 @@ unsigned int targetDegrees = 0;
 bool scanned = false;
 uint8_t closestTarget = 0;
 
-
 byte gammatable[256];
 
 Servo servoPan;
@@ -51,7 +57,9 @@ Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS3472
 Adafruit_NeoPixel pixel = Adafruit_NeoPixel(1, pixelPin, NEO_RGB + NEO_KHZ800);
 NewPing sonar(triggerPin, echoPin, maxDistance);
 
+// function prototypes for reference in function 
 void noopUpdate();
+
 void scanEnter();
 void scanUpdate();
 void scanExit();
@@ -61,27 +69,42 @@ void setPixelGreen();
 void setPixelYellow();
 void setPixelRed();
 
+void navigateEnter();
+void navigateUpdate();
+void navigateExit();
+
 void forwardEnter();
 void forwardUpdate();
 void forwardExit();
+
+void backwardEnter();
+void backwardUpdate();
+void backwardExit();
 
 void pointTurnEnter();
 void pointTurnUpdate();
 void pointTurnExit();
 
-State off = State(noopUpdate);
+void evadeEnter();
+void evadeUpdate();
+void evadeExit();
+
+State noop = State(noopUpdate);
+
 State green = State(setPixelGreen, NULL, setPixelOff);
 State yellow = State(setPixelYellow, NULL, setPixelOff);
 State red = State(setPixelRed, NULL, setPixelOff);
 
-FSM ledStateMachine = FSM(off);
+FSM ledStateMachine = FSM(noop);
 
-State noop = State(noopUpdate);
+
 State scan = State(scanEnter, scanUpdate, scanExit);
+State navigate = State(navigateEnter, navigateUpdate, navigateExit);
 
 FSM stateMachine = FSM(noop);
 
-State navigate = State(forwardEnter, forwardUpdate, forwardExit);
+State forward = State(forwardEnter, forwardUpdate, forwardExit);
+State backward = State(backwardEnter, backwardUpdate, backwardExit);
 State pointTurn = State(pointTurnEnter, pointTurnUpdate, pointTurnExit);
 
 FSM motorStateMachine = FSM(noop);
@@ -143,7 +166,7 @@ void loop() {
   
   int reading = digitalRead(buttonPin);
 
-
+  //State currentState = stateMachine.getCurrentState();
   
   if (reading != lastButtonState) {
     lastDebounceTime = millis();
@@ -223,7 +246,7 @@ void scanUpdate() {
       //
     }else{
       stateMachine.immediateTransitionTo(noop);
-      //motorStateMachine.transitionTo(pointTurn);
+      motorStateMachine.transitionTo(pointTurn);
       Serial.println("scanned!");
       
     }
@@ -302,6 +325,57 @@ void oneSensorCycle() {
   memset(cm, 0, sizeof(cm));
 }
 
+
+void navigateEnter(){
+  
+}
+void navigateUpdate(){
+  
+}
+void navigateExit(){
+  
+}
+
+/*
+ * http://rossum.sourceforge.net/papers/DiffSteer/DiffSteer.html
+ * https://forum.arduino.cc/index.php?topic=98147.0
+ * radians = (degrees * 71) / 4068
+ * degrees = (radians * 4068) / 71
+ * 
+ * SL = rθ
+ */
+
+void roundingCorner(int radius, int degrees){
+
+  int distanceBetweenWheels = 153;
+  
+  float radians = (degrees * 71) / 4068;
+
+  float displacementLeft = radius * radians;
+  float displacementRight = (radius + distanceBetweenWheels) * radians;
+  float displacementCenter = (radius + distanceBetweenWheels / 2) * radians;
+
+    Serial.print("degrees: ");
+  Serial.println(degrees);
+
+    Serial.print("radians: ");
+  Serial.println(radians);
+  
+/*
+    motor1->run(FORWARD);
+    motor2->run(FORWARD);
+    motor1->setSpeed(255);
+    motor2->setSpeed(255);
+    */
+}
+
+/*
+ * http://www.softschools.com/formulas/physics/distance_speed_time_formula/75/
+ * speed = distance / time (ex: 550 mm / 1000 ms, 55 cm/s)
+ * time = distance / speed 
+ * distance = speed * time
+ */
+
 void forwardEnter(){
 
   currentMillis = millis();
@@ -366,21 +440,18 @@ void forwardExit(){
   motor2->run(RELEASE);
 }
 
-
-void forward(int speed, int duration){
-/*
-  while(millis() > currentMillis + duration){
-    motor1->run(FORWARD);
-    motor2->run(FORWARD);
-    motor1->setSpeed(speed);
-    motor2->setSpeed(speed);
-  }
-
-  duration = 0;
-  closestTarget = 0;
-
-*/
+void backwardEnter(){
+  
 }
+
+void backwardUpdate(){
+  
+}
+
+void backwardExit(){
+  
+}
+
 /*
  * snelheid x tijd = afstand
  * afstand / snelheid = tijd
@@ -419,8 +490,25 @@ void pointTurnExit(){
   motor2->run(RELEASE);
 }
 
+void evadeEnter(){
+  
+}
+
+void evadeUpdate(){
+  
+}
+
+void evadeExit(){
+  
+}
+
 void stopMotors(){
   motor1->run(RELEASE);
   motor2->run(RELEASE);
   delay(1000);
 }
+
+
+
+
+
