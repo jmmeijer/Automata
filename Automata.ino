@@ -13,7 +13,7 @@ const byte wheelDiameter = 7;
 const byte wheelRadius = wheelDiameter/2;
 const byte distanceBetweenWheels = 153;
 
-const byte iterations = 10;
+const byte iterations = 20;
 const byte triggerPin = A0;
 const byte echoPin = A1;
 const byte maxDistance = 50; // TODO change to variable to increase scanning distance after fails
@@ -89,6 +89,8 @@ void evadeEnter();
 void evadeUpdate();
 void evadeExit();
 
+void stopMotorsEnter();
+
 State noop = State(noopUpdate);
 
 State green = State(setPixelGreen, NULL, setPixelOff);
@@ -105,6 +107,7 @@ FSM stateMachine = FSM(noop);
 State forward = State(forwardEnter, forwardUpdate, forwardExit);
 State backward = State(backwardEnter, backwardUpdate, backwardExit);
 State pointTurn = State(pointTurnEnter, pointTurnUpdate, pointTurnExit);
+State stopMotors = State(stopMotorsEnter, NULL, NULL);
 
 FSM motorStateMachine = FSM(noop);
 
@@ -207,24 +210,40 @@ void scanEnter(){
 
 void scanUpdate() {
 
+delay(50);
+          int distanceCM = sonar.ping_cm();
+          
+          Serial.print("Ping: ");
+          Serial.print(distanceCM);
+          Serial.println("cm");
+          
+          if(distanceCM > 0){
+            Serial.println("Scanned");
+            scanned = true;
+            closestTarget = distanceCM;
+            
+          }
+
     if (!scanned){
 
       targetDegrees = 18;
       
         for (uint8_t i = 0; i < iterations; i++) {
-          
+
           int currentPos = i*18;
           Serial.println(currentPos);
           for (int pos = currentPos; pos <= currentPos+18; pos += 18) {
             //Serial.println(pos);
             //servoPan.write(pos);
             //delay(15);
+            
             motorStateMachine.transitionTo(pointTurn);
           }
-         
 
-          //TODO: if statement on signal from pointTurn 
+
           
+          //TODO: if statement on signal from pointTurn 
+          /*
         if (millis() >= pingTimer[i]) {
           pingTimer[i] += pingInterval * iterations;
           if (i == 0 && currentIteration == iterations - 1) oneSensorCycle();
@@ -236,16 +255,15 @@ void scanUpdate() {
           sonar.ping_timer(echoCheck);
           delay(pingInterval);
         }
+        */
+        
         
       }
 
-      
-      //pointTurn("left",180);
-      //stopMotors();
-      //
     }else{
-      stateMachine.immediateTransitionTo(noop);
-      motorStateMachine.transitionTo(pointTurn);
+      //stateMachine.immediateTransitionTo(noop);
+      stateMachine.transitionTo(navigate);
+      //motorStateMachine.transitionTo(forward);
       Serial.println("scanned!");
       
     }
@@ -281,6 +299,8 @@ void trigger() {
   if (state == HIGH)
   {
     Serial.println("LineTracker is on the line");
+    stateMachine.immediateTransitionTo(noop);
+    motorStateMachine.immediateTransitionTo(stopMotors);
   }
   else if (state == LOW)
   {
@@ -330,7 +350,23 @@ void navigateEnter(){
 }
 void navigateUpdate(){
   // Add logic based on position and orientation
-  
+    delay(50);
+    int distanceCM = sonar.ping_cm();
+    
+    Serial.print("Ping: ");
+    Serial.print(distanceCM);
+    Serial.println("cm");
+
+    closestTarget = distanceCM;
+    
+    if(closestTarget < 10){
+      Serial.println("nu gaan stoppen");
+      ledStateMachine.immediateTransitionTo(red);
+      motorStateMachine.transitionTo(stopMotors);
+    }else{
+      motorStateMachine.transitionTo(forward);
+    }
+    
 }
 void navigateExit(){
   
@@ -395,12 +431,15 @@ void forwardEnter(){
  */
 void forwardUpdate(){
 
+
+/*
   Serial.print("closestTarget: ");
   Serial.println(closestTarget);
 
   //if(closestTarget > 0){ //TODO: move logic to superFSM
-  int duration = closestTarget / 0.055;
-    
+  //int duration = closestTarget / 0.055;
+  int duration = closestTarget / 0.030;
+  
   Serial.print("duration: ");
   Serial.println(duration);
 
@@ -410,8 +449,8 @@ void forwardUpdate(){
     Serial.println(millis());
     Serial.println(currentMillis + duration);
     
-    motor1->setSpeed(255);
-    motor2->setSpeed(255);
+    motor1->setSpeed(128);
+    motor2->setSpeed(128);
     //delay(10);
   }
 
@@ -422,17 +461,10 @@ void forwardUpdate(){
     
     //stopMotors();
     //closestTarget = 0;
-    
-  //}else{
-    /*
-    pointTurn("left",180);
-    stopMotors();
-delay(1000);
-    pointTurn("right",180);
-    stopMotors();
-delay(1000);
-*/
-  //}
+  */
+
+    motor1->setSpeed(128);
+    motor2->setSpeed(128);
   
 }
 
@@ -485,12 +517,19 @@ void pointTurnEnter(){
 }
 
 void pointTurnUpdate(){
+
+    motor1->setSpeed(64);
+    motor2->setSpeed(64);
+    delay(200);
+  
+  /*
   for(int i=orientation;i<targetDegrees;i+=(targetDegrees/10)){
     //Serial.println(i);
     motor1->setSpeed(128);
     motor2->setSpeed(128);
-    delay(55);
+    delay(50);
   }
+  */
   motorStateMachine.immediateTransitionTo(noop);
 }
 
@@ -511,7 +550,7 @@ void evadeExit(){
   
 }
 
-void stopMotors(){
+void stopMotorsEnter(){
   motor1->run(RELEASE);
   motor2->run(RELEASE);
   delay(1000);
