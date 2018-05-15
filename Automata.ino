@@ -24,7 +24,7 @@ const bool commonAnode = true;
 
 const byte buttonPin = 2;
 
-const byte interruptPin = 3;
+const byte interruptPin = 3; //aanpassen
 volatile byte state = LOW;
 
 int buttonState;
@@ -96,7 +96,6 @@ State yellow = State(setPixelYellow, NULL, setPixelOff);
 State red = State(setPixelRed, NULL, setPixelOff);
 
 FSM ledStateMachine = FSM(noop);
-
 
 State scan = State(scanEnter, scanUpdate, scanExit);
 State navigate = State(navigateEnter, navigateUpdate, navigateExit);
@@ -224,7 +223,7 @@ void scanUpdate() {
           }
          
 
-          
+          //TODO: if statement on signal from pointTurn 
           
         if (millis() >= pingTimer[i]) {
           pingTimer[i] += pingInterval * iterations;
@@ -330,6 +329,7 @@ void navigateEnter(){
   
 }
 void navigateUpdate(){
+  // Add logic based on position and orientation
   
 }
 void navigateExit(){
@@ -360,6 +360,8 @@ void roundingCorner(int radius, int degrees){
 
     Serial.print("radians: ");
   Serial.println(radians);
+
+
   
 /*
     motor1->run(FORWARD);
@@ -383,6 +385,9 @@ void forwardEnter(){
   Serial.print("currentMillis: ");
   Serial.println(currentMillis);
 
+  motor1->run(FORWARD);
+  motor2->run(FORWARD);
+
 }
 
 /*
@@ -398,7 +403,6 @@ void forwardUpdate(){
     
   Serial.print("duration: ");
   Serial.println(duration);
-    //forward(255, duration);
 
   while(millis() - currentMillis < duration){
     
@@ -406,8 +410,6 @@ void forwardUpdate(){
     Serial.println(millis());
     Serial.println(currentMillis + duration);
     
-    motor1->run(FORWARD);
-    motor2->run(FORWARD);
     motor1->setSpeed(255);
     motor2->setSpeed(255);
     //delay(10);
@@ -441,7 +443,12 @@ void forwardExit(){
 }
 
 void backwardEnter(){
-  
+  currentMillis = millis();
+
+  Serial.print("currentMillis: ");
+  Serial.println(currentMillis);
+  motor1->run(BACKWARD);
+  motor2->run(BACKWARD);
 }
 
 void backwardUpdate(){
@@ -449,7 +456,9 @@ void backwardUpdate(){
 }
 
 void backwardExit(){
-  
+  // TODO: Braking
+  motor1->run(RELEASE);
+  motor2->run(RELEASE);
 }
 
 /*
