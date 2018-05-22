@@ -369,6 +369,7 @@ void navigateUpdate(){
       Serial.println("nu gaan stoppen");
       ledStateMachine.immediateTransitionTo(red);
       motorStateMachine.transitionTo(stopMotors);
+      stateMachine.transitionTo(detect);
     }else{
       motorStateMachine.transitionTo(forward);
     }
@@ -380,14 +381,29 @@ void navigateExit(){
 
 void detectEnter(){
   
+  
+
 }
 
 void detectUpdate(){
+  uint16_t clear, red, green, blue;
   
+  tcs.setInterrupt(false);      // turn on LED
+  
+  delay(60);  // takes 50ms to read 
+  
+  tcs.getRawData(&red, &green, &blue, &clear);
+
+  tcs.setInterrupt(true);  // turn off LED
+  
+  Serial.print("C:\t"); Serial.print(clear);
+  Serial.print("\tR:\t"); Serial.print(red);
+  Serial.print("\tG:\t"); Serial.print(green);
+  Serial.print("\tB:\t"); Serial.print(blue);
 }
 
 void detectExit(){
-  
+  tcs.setInterrupt(true);  // turn off LED
 }
 
 /*
