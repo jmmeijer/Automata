@@ -11,7 +11,7 @@
  */
 const byte wheelDiameter = 67; // in mm
 const byte wheelRadius = wheelDiameter/2;
-const byte distanceBetweenWheels = 183; //in mm
+const byte distanceBetweenWheels = 183; // in mm
 
 const byte iterations = 20;
 const byte triggerPin = A0;
@@ -101,6 +101,7 @@ FSM ledStateMachine = FSM(noop);
 
 State scan = State(scanEnter, scanUpdate, scanExit);
 State navigate = State(navigateEnter, navigateUpdate, navigateExit);
+State evade = State(evadeEnter, evadeUpdate, evadeExit);
 
 FSM stateMachine = FSM(noop);
 
@@ -204,7 +205,7 @@ void noopUpdate() {
 }
 
 void scanEnter(){
-  Serial.println("Scan Enter");
+  Serial.println("Enter Scanning");
   ledStateMachine.immediateTransitionTo(yellow);
 }
 
