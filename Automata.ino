@@ -73,6 +73,14 @@ void navigateEnter();
 void navigateUpdate();
 void navigateExit();
 
+void evadeEnter();
+void evadeUpdate();
+void evadeExit();
+
+void detectEnter();
+void detectUpdate();
+void detectExit();
+
 void forwardEnter();
 void forwardUpdate();
 void forwardExit();
@@ -84,10 +92,6 @@ void backwardExit();
 void pointTurnEnter();
 void pointTurnUpdate();
 void pointTurnExit();
-
-void evadeEnter();
-void evadeUpdate();
-void evadeExit();
 
 void stopMotorsEnter();
 
@@ -101,6 +105,7 @@ FSM ledStateMachine = FSM(noop);
 
 State scan = State(scanEnter, scanUpdate, scanExit);
 State navigate = State(navigateEnter, navigateUpdate, navigateExit);
+State detect = State(detectEnter, detectUpdate, detectExit);
 State evade = State(evadeEnter, evadeUpdate, evadeExit);
 
 FSM stateMachine = FSM(noop);
@@ -300,7 +305,7 @@ void trigger() {
   if (state == HIGH)
   {
     Serial.println("LineTracker is on the line");
-    stateMachine.immediateTransitionTo(noop);
+    stateMachine.immediateTransitionTo(noop); // TODO: evade after line interrupt
     motorStateMachine.immediateTransitionTo(stopMotors);
   }
   else if (state == LOW)
@@ -370,6 +375,18 @@ void navigateUpdate(){
     
 }
 void navigateExit(){
+  
+}
+
+void detectEnter(){
+  
+}
+
+void detectUpdate(){
+  
+}
+
+void detectExit(){
   
 }
 
