@@ -400,6 +400,18 @@ void detectUpdate(){
   Serial.print("\tR:\t"); Serial.print(red);
   Serial.print("\tG:\t"); Serial.print(green);
   Serial.print("\tB:\t"); Serial.print(blue);
+
+  // Figure out some basic hex code for visualization
+  uint32_t sum = clear;
+  float r, g, b;
+  r = red; r /= sum;
+  g = green; g /= sum;
+  b = blue; b /= sum;
+  r *= 255; g *= 255; b *= 255;
+  Serial.print("\t");
+  Serial.print((int)r, HEX); Serial.print((int)g, HEX); Serial.print((int)b, HEX);
+  Serial.println();
+  
 }
 
 void detectExit(){
