@@ -9,9 +9,9 @@
 /*
  * Robot settings
  */
-const byte wheelDiameter = 7;
+const byte wheelDiameter = 67; // in mm
 const byte wheelRadius = wheelDiameter/2;
-const byte distanceBetweenWheels = 153;
+const byte distanceBetweenWheels = 183; //in mm
 
 const byte iterations = 20;
 const byte triggerPin = A0;
