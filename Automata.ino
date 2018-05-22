@@ -385,6 +385,9 @@ void detectEnter(){
 
 }
 
+/*
+ * https://www.makerblog.at/2015/01/farben-erkennen-mit-dem-rgb-sensor-tcs34725-und-dem-arduino/
+ */
 void detectUpdate(){
   uint16_t clear, red, green, blue;
   
@@ -403,15 +406,50 @@ void detectUpdate(){
 
   // Figure out some basic hex code for visualization
   uint32_t sum = clear;
-  float r, g, b;
-  r = red; r /= sum;
-  g = green; g /= sum;
-  b = blue; b /= sum;
+
+  
+  float average, r, g, b;
+
+  average = sum/3;
+  
+  r = red; r /= average;
+  g = green; g /= average;
+  b = blue; b /= average;
+  /*
   r *= 255; g *= 255; b *= 255;
   Serial.print("\t");
   Serial.print((int)r, HEX); Serial.print((int)g, HEX); Serial.print((int)b, HEX);
+  */
   Serial.println();
-  
+
+
+ Serial.print("\tClear:"); Serial.print(clear);
+ Serial.print("\tRed:"); Serial.print(r);
+ Serial.print("\tGreen:"); Serial.print(g);
+ Serial.print("\tBlue:"); Serial.print(b);
+  guessColor(r,g,b);
+  Serial.println();
+}
+
+void guessColor(int r,int g,int b){
+  if ((r > 1.4) && (g < 0.9) && (b < 0.9)) {
+  Serial.print("\tRed");
+  }
+  else if ((r < 0.95) && (g > 1.4) && (b < 0.9)) {
+  Serial.print("\tGreen");
+  }
+  else if ((r < 0.8) && (g < 1.2) && (b > 1.2)) {
+  Serial.print("\tBlue");
+  }
+  else if ((r > 1.15) && (g > 1.15) && (b < 0.7)) {
+  Serial.print("\tYellow");
+  }
+  else if ((r > 1.4) && (g < 1.0) && (b < 0.7)) {
+  Serial.print("\tOrange");
+  } 
+  else {
+  Serial.print("\tNot recognized"); 
+  }
 }
 
 void detectExit(){
