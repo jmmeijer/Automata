@@ -18,13 +18,15 @@ const byte triggerPin = A0;
 const byte echoPin = A1;
 const byte maxDistance = 50; // TODO change to variable to increase scanning distance after fails
 
+const byte relayPin = 13;
+
 const byte pixelPin = 6;
 
 const bool commonAnode = true;
 
-const byte buttonPin = 2;
+const byte buttonPin = 3;
 
-const byte interruptPin = 3; //aanpassen
+const byte lineSensorPin = 2; //aanpassen
 volatile byte state = LOW;
 
 int buttonState;
@@ -53,7 +55,7 @@ Servo servoTilt;
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 Adafruit_DCMotor *motor1 = AFMS.getMotor(1);
 Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
-Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
+Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_1X);
 Adafruit_NeoPixel pixel = Adafruit_NeoPixel(1, pixelPin, NEO_RGB + NEO_KHZ800);
 NewPing sonar(triggerPin, echoPin, maxDistance);
 
@@ -120,11 +122,14 @@ FSM motorStateMachine = FSM(noop);
 void setup() {
   Serial.begin(9600);
   Serial.println("Automata Test!");
+
+  pinMode(relayPin, OUTPUT);
+  digitalWrite(relayPin, HIGH);
   
   pinMode(buttonPin, INPUT);
 
-  pinMode(interruptPin, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(interruptPin), trigger, CHANGE);
+  pinMode(lineSensorPin, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(lineSensorPin), trigger, CHANGE);
 
   pingTimer[0] = millis() + 75;
   for (uint8_t i = 1; i < iterations; i++){
@@ -175,6 +180,7 @@ void loop() {
   int reading = digitalRead(buttonPin);
 
   //State currentState = stateMachine.getCurrentState();
+
   
   if (reading != lastButtonState) {
     lastDebounceTime = millis();
@@ -301,7 +307,7 @@ void setPixelRed(){
 }
 
 void trigger() {
-  state = digitalRead(interruptPin);
+  state = digitalRead(lineSensorPin);
   if (state == HIGH)
   {
     Serial.println("LineTracker is on the line");
@@ -406,11 +412,10 @@ void detectUpdate(){
 
   // Figure out some basic hex code for visualization
   uint32_t sum = clear;
-
   
   float average, r, g, b;
 
-  average = sum/3;
+  average = (red+green+blue)/3;
   
   r = red; r /= average;
   g = green; g /= average;
@@ -427,18 +432,20 @@ void detectUpdate(){
  Serial.print("\tRed:"); Serial.print(r);
  Serial.print("\tGreen:"); Serial.print(g);
  Serial.print("\tBlue:"); Serial.print(b);
+ Serial.println();
+ 
   guessColor(r,g,b);
-  Serial.println();
+  delay(100);
 }
 
-void guessColor(int r,int g,int b){
+void guessColor(int r, int g, int b){
   if ((r > 1.4) && (g < 0.9) && (b < 0.9)) {
   Serial.print("\tRed");
   }
   else if ((r < 0.95) && (g > 1.4) && (b < 0.9)) {
   Serial.print("\tGreen");
   }
-  else if ((r < 0.8) && (g < 1.2) && (b > 1.2)) {
+  else if ((r < 0.8) && (g < 1.8) && (b > 1.2)) {
   Serial.print("\tBlue");
   }
   else if ((r > 1.15) && (g > 1.15) && (b < 0.7)) {
@@ -450,6 +457,7 @@ void guessColor(int r,int g,int b){
   else {
   Serial.print("\tNot recognized"); 
   }
+  Serial.println();
 }
 
 void detectExit(){
