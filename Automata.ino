@@ -48,8 +48,6 @@ unsigned int targetDegrees = 0;
 bool scanned = false;
 uint8_t closestTarget = 0;
 
-byte gammatable[256];
-
 Servo servoPan;
 Servo servoTilt;
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
@@ -123,8 +121,8 @@ void setup() {
   Serial.begin(9600);
   Serial.println("Automata Test!");
 
-  pinMode(relayPin, OUTPUT);
-  digitalWrite(relayPin, HIGH);
+  //pinMode(relayPin, OUTPUT);
+  //digitalWrite(relayPin, HIGH);
   
   pinMode(buttonPin, INPUT);
 
@@ -159,19 +157,6 @@ void setup() {
 
   pixel.begin();
   pixel.show();
-
-  for (int i=0; i<256; i++) {
-    float x = i;
-    x /= 255;
-    x = pow(x, 2.5);
-    x *= 255;
-    
-    if (commonAnode) {
-      gammatable[i] = 255 - x;
-    } else {
-      gammatable[i] = x;      
-    }
-  }
 }
 
 void loop() {
@@ -373,6 +358,10 @@ void navigateUpdate(){
     
     if(closestTarget < 10){
       Serial.println("nu gaan stoppen");
+
+
+// TODO: Check distance and orientation
+      
       ledStateMachine.immediateTransitionTo(red);
       motorStateMachine.transitionTo(stopMotors);
       stateMachine.transitionTo(detect);
@@ -404,12 +393,12 @@ void detectUpdate(){
   tcs.getRawData(&red, &green, &blue, &clear);
 
   tcs.setInterrupt(true);  // turn off LED
-  
+  /*
   Serial.print("C:\t"); Serial.print(clear);
   Serial.print("\tR:\t"); Serial.print(red);
   Serial.print("\tG:\t"); Serial.print(green);
   Serial.print("\tB:\t"); Serial.print(blue);
-
+*/
   // Figure out some basic hex code for visualization
   uint32_t sum = clear;
   
@@ -427,18 +416,24 @@ void detectUpdate(){
   */
   Serial.println();
 
-
+/*
  Serial.print("\tClear:"); Serial.print(clear);
  Serial.print("\tRed:"); Serial.print(r);
  Serial.print("\tGreen:"); Serial.print(g);
  Serial.print("\tBlue:"); Serial.print(b);
  Serial.println();
- 
+ */
   guessColor(r,g,b);
   delay(100);
 }
 
-void guessColor(int r, int g, int b){
+void guessColor(float r, float g, float b){
+/*
+  Serial.print("\tRed:"); Serial.print(r);
+  Serial.print("\tGreen:"); Serial.print(g);
+  Serial.print("\tBlue:"); Serial.print(b);
+  Serial.println();
+  */
   if ((r > 1.4) && (g < 0.9) && (b < 0.9)) {
   Serial.print("\tRed");
   }
