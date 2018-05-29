@@ -607,7 +607,7 @@ void pointTurnUpdate(){
 
     motor1->setSpeed(64);
     motor2->setSpeed(64);
-    delay(200);
+    delay(100);
   
   /*
   for(int i=orientation;i<targetDegrees;i+=(targetDegrees/10)){
