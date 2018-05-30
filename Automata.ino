@@ -504,7 +504,7 @@ void guessColor(float r, float g, float b){
 }
 
 void detectExit(){
-  tcs.setInterrupt(true);  // turn off LED
+  tcsFront.setInterrupt(true);  // turn off LED
 }
 
 /*
