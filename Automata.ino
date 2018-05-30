@@ -28,9 +28,9 @@ const byte pixelPin = 6;
 
 const bool commonAnode = true;
 
-const byte buttonPin = 3;
+const byte buttonPin = 2;
 
-const byte lineSensorPin = 2;
+const byte lineSensorPin = 3;
 volatile byte state = LOW;
 
 int buttonState;
