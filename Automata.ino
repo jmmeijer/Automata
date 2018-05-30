@@ -593,7 +593,8 @@ void backwardEnter(){
 }
 
 void backwardUpdate(){
-  
+    motor1->setSpeed(128);
+    motor2->setSpeed(128);
 }
 
 void backwardExit(){
@@ -652,6 +653,8 @@ void grabEnter(){
 }
 
 void grabUpdate(){
+  digitalWrite(relayPin, HIGH); // in update state?
+  //TODO: check if grab succeeded, possibly by using distance sensor
   
 }
 
@@ -664,7 +667,16 @@ void evadeEnter(){
 }
 
 void evadeUpdate(){
-  
+  // assuming motors stopped
+  motorStateMachine.transitionTo(backward);
+  delay(400);
+  motorStateMachine.transitionTo(pointTurn);
+  delay(400);
+  motorStateMachine.transitionTo(forward);
+  delay(400);
+  motorStateMachine.transitionTo(stopMotors);
+
+  // TODO: check for other object
 }
 
 void evadeExit(){
