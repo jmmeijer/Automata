@@ -26,7 +26,7 @@ const bool commonAnode = true;
 
 const byte buttonPin = 3;
 
-const byte lineSensorPin = 2; //aanpassen
+const byte lineSensorPin = 2;
 volatile byte state = LOW;
 
 int buttonState;
@@ -44,6 +44,16 @@ uint8_t currentIteration = 0;
 
 unsigned int orientation = 0;
 unsigned int targetDegrees = 0;
+
+enum color {
+  NONE,
+  RED,
+  GREEN,
+  BLUE
+};
+
+const color targetColor = RED;
+color scannedColor = NONE;
 
 bool scanned = false;
 uint8_t closestTarget = 0;
@@ -81,6 +91,10 @@ void detectEnter();
 void detectUpdate();
 void detectExit();
 
+void grabEnter();
+void grabUpdate();
+void grabExit();
+
 void forwardEnter();
 void forwardUpdate();
 void forwardExit();
@@ -106,6 +120,7 @@ FSM ledStateMachine = FSM(noop);
 State scan = State(scanEnter, scanUpdate, scanExit);
 State navigate = State(navigateEnter, navigateUpdate, navigateExit);
 State detect = State(detectEnter, detectUpdate, detectExit);
+State grab = State(grabEnter, grabUpdate, grabExit);
 State evade = State(evadeEnter, evadeUpdate, evadeExit);
 
 FSM stateMachine = FSM(noop);
@@ -120,6 +135,9 @@ FSM motorStateMachine = FSM(noop);
 void setup() {
   Serial.begin(9600);
   Serial.println("Automata Test!");
+
+  Serial.print("Target color: ");
+  Serial.println(targetColor);
 
   //pinMode(relayPin, OUTPUT);
   //digitalWrite(relayPin, HIGH);
@@ -375,9 +393,8 @@ void navigateExit(){
 }
 
 void detectEnter(){
-  
-  
-
+  // Reset scanned color
+  scannedColor = NONE;
 }
 
 /*
@@ -409,15 +426,9 @@ void detectUpdate(){
   r = red; r /= average;
   g = green; g /= average;
   b = blue; b /= average;
-  /*
-  r *= 255; g *= 255; b *= 255;
-  Serial.print("\t");
-  Serial.print((int)r, HEX); Serial.print((int)g, HEX); Serial.print((int)b, HEX);
-  */
-  Serial.println();
 
 /*
- Serial.print("\tClear:"); Serial.print(clear);
+ Serial.print("Clear:"); Serial.print(clear);
  Serial.print("\tRed:"); Serial.print(r);
  Serial.print("\tGreen:"); Serial.print(g);
  Serial.print("\tBlue:"); Serial.print(b);
@@ -425,34 +436,42 @@ void detectUpdate(){
  */
   guessColor(r,g,b);
   delay(100);
+
+  if(scannedColor == targetColor){
+    // TODO: transition to grab
+    stateMachine.transitionTo(grab);
+  }else if(scannedColor != NONE && scannedColor != targetColor){
+    // TODO: transition to evade
+    stateMachine.transitionTo(evade);
+  }else{
+    // keep scanning
+  }
+  
 }
 
 void guessColor(float r, float g, float b){
-/*
-  Serial.print("\tRed:"); Serial.print(r);
-  Serial.print("\tGreen:"); Serial.print(g);
-  Serial.print("\tBlue:"); Serial.print(b);
-  Serial.println();
-  */
+  Serial.print("Scanned color: ");
+  
   if ((r > 1.4) && (g < 0.9) && (b < 0.9)) {
-  Serial.print("\tRed");
+    Serial.print("RED");
+    scannedColor = RED;
   }
   else if ((r < 0.95) && (g > 1.4) && (b < 0.9)) {
-  Serial.print("\tGreen");
+    Serial.print("GREEN");
+    scannedColor = GREEN;
   }
   else if ((r < 0.8) && (g < 1.8) && (b > 1.2)) {
-  Serial.print("\tBlue");
+    Serial.print("BLUE");
+    scannedColor = BLUE;
   }
-  else if ((r > 1.15) && (g > 1.15) && (b < 0.7)) {
-  Serial.print("\tYellow");
-  }
-  else if ((r > 1.4) && (g < 1.0) && (b < 0.7)) {
-  Serial.print("\tOrange");
-  } 
   else {
-  Serial.print("\tNot recognized"); 
+    Serial.print("Not recognized");
+    scannedColor = NONE;
   }
   Serial.println();
+  /*
+  Serial.println(scannedColor);
+  */
 }
 
 void detectExit(){
@@ -625,8 +644,20 @@ void pointTurnExit(){
   motor2->run(RELEASE);
 }
 
-void evadeEnter(){
+void grabEnter(){
+    Serial.println("Enter grab state");
+}
+
+void grabUpdate(){
   
+}
+
+void grabExit(){
+  
+}
+
+void evadeEnter(){
+  Serial.println("Enter evade state");
 }
 
 void evadeUpdate(){
