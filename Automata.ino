@@ -8,6 +8,8 @@
 #include <Adafruit_NeoPixel.h>
 #include <NewPing.h>
 
+#define TCAADDR 0x70
+
 /*
  * Robot settings
  */
@@ -64,11 +66,22 @@ Servo servoPan;
 Servo servoTilt;
 */
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
-Adafruit_DCMotor *motor1 = AFMS.getMotor(1);
-Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
-Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_1X);
+Adafruit_DCMotor *motorLeft = AFMS.getMotor(1);
+Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
+Adafruit_TCS34725 tcsFront = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_1X);
+Adafruit_TCS34725 tcsBottom = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_1X);
 Adafruit_NeoPixel pixel = Adafruit_NeoPixel(1, pixelPin, NEO_RGB + NEO_KHZ800);
 NewPing sonar(triggerPin, echoPin, maxDistance);
+
+// helper function to select i2c port
+void tcaselect(uint8_t i) {
+  if (i > 7) return;
+ 
+  Wire.beginTransmission(TCAADDR);
+  Wire.write(1 << i);
+  Wire.endTransmission();  
+}
+
 
 // function prototypes for reference in function 
 void noopUpdate();
@@ -161,27 +174,38 @@ void setup() {
   servoTilt.write(90);
 */
   AFMS.begin();
-  motor1->setSpeed(150);
-  motor1->run(FORWARD);
-  motor1->run(RELEASE);
+  motorLeft->setSpeed(150);
+  motorLeft->run(FORWARD);
+  motorLeft->run(RELEASE);
 
-  motor2->setSpeed(150);
-  motor2->run(FORWARD);
-  motor2->run(RELEASE);
+  motorRight->setSpeed(150);
+  motorRight->run(FORWARD);
+  motorRight->run(RELEASE);
 
-  if (tcs.begin()) {
-   // Serial.println("Found sensor");
+  if (tcsFront.begin()) {
+   // Serial.println("Found TCS34725 sensor 1");
   } else {
     //Serial.println("No TCS34725 found ... check your connections");
     while (1); // halt!
   }
+  if (tcsBottom.begin()) {
+   // Serial.println("Found TCS34725 sensor 2");
+  } else {
+    //Serial.println("No TCS34725 found ... check your connections");
+    while (1); // halt!
+  }
+  // Turn off LEDs
+  tcaselect(6);
+  tcsFront.setInterrupt(true);
+  tcaselect(7);
+  tcsBottom.setInterrupt(true);
 
   pixel.begin();
   pixel.show();
 }
 
 void loop() {
-  tcs.setInterrupt(true);
+  
   
   int reading = digitalRead(buttonPin);
 
@@ -405,14 +429,16 @@ void detectEnter(){
  */
 void detectUpdate(){
   uint16_t clear, red, green, blue;
-  
-  tcs.setInterrupt(false);      // turn on LED
+
+
+  tcaselect(6);
+  tcsFront.setInterrupt(false);      // turn on LED
   
   delay(60);  // takes 50ms to read 
   
-  tcs.getRawData(&red, &green, &blue, &clear);
+  tcsFront.getRawData(&red, &green, &blue, &clear);
 
-  tcs.setInterrupt(true);  // turn off LED
+  tcsFront.setInterrupt(true);  // turn off LED
   /*
   Serial.print("C:\t"); Serial.print(clear);
   Serial.print("\tR:\t"); Serial.print(red);
@@ -447,7 +473,7 @@ void detectUpdate(){
     // TODO: transition to evade
     stateMachine.transitionTo(evade);
   }else{
-    // keep scanning
+    // keep scanning or move closer towards target
   }
   
 }
@@ -509,10 +535,10 @@ void roundingCorner(int radius, int degrees){
 
   
 /*
-    motor1->run(FORWARD);
-    motor2->run(FORWARD);
-    motor1->setSpeed(255);
-    motor2->setSpeed(255);
+    motorLeft->run(FORWARD);
+    motorRight->run(FORWARD);
+    motorLeft->setSpeed(255);
+    motorRight->setSpeed(255);
     */
 }
 
@@ -530,8 +556,8 @@ void forwardEnter(){
   Serial.print("currentMillis: ");
   Serial.println(currentMillis);
 
-  motor1->run(FORWARD);
-  motor2->run(FORWARD);
+  motorLeft->run(FORWARD);
+  motorRight->run(FORWARD);
 
 }
 
@@ -558,8 +584,8 @@ void forwardUpdate(){
     Serial.println(millis());
     Serial.println(currentMillis + duration);
     
-    motor1->setSpeed(128);
-    motor2->setSpeed(128);
+    motorLeft->setSpeed(128);
+    motorRight->setSpeed(128);
     //delay(10);
   }
 
@@ -571,16 +597,16 @@ void forwardUpdate(){
     //stopMotors();
     //closestTarget = 0;
   */
-
-    motor1->setSpeed(128);
-    motor2->setSpeed(128);
+// Just drive...
+    motorLeft->setSpeed(128);
+    motorRight->setSpeed(128);
   
 }
 
 void forwardExit(){
   // TODO: Braking
-  motor1->run(RELEASE);
-  motor2->run(RELEASE);
+  motorLeft->run(RELEASE);
+  motorRight->run(RELEASE);
 }
 
 void backwardEnter(){
@@ -588,19 +614,19 @@ void backwardEnter(){
 
   Serial.print("currentMillis: ");
   Serial.println(currentMillis);
-  motor1->run(BACKWARD);
-  motor2->run(BACKWARD);
+  motorLeft->run(BACKWARD);
+  motorRight->run(BACKWARD);
 }
 
 void backwardUpdate(){
-    motor1->setSpeed(128);
-    motor2->setSpeed(128);
+    motorLeft->setSpeed(128);
+    motorRight->setSpeed(128);
 }
 
 void backwardExit(){
   // TODO: Braking
-  motor1->run(RELEASE);
-  motor2->run(RELEASE);
+  motorLeft->run(RELEASE);
+  motorRight->run(RELEASE);
 }
 
 /*
@@ -618,25 +644,25 @@ void pointTurnEnter(){
   Serial.println(targetDegrees);
   
   if( targetDegrees > 0 && targetDegrees <= 180 ){
-    motor1->run(FORWARD);
-    motor2->run(BACKWARD);
+    motorLeft->run(FORWARD);
+    motorRight->run(BACKWARD);
   }else if( targetDegrees > 180 && targetDegrees <= 360){
-    motor1->run(BACKWARD);
-    motor2->run(FORWARD);
+    motorLeft->run(BACKWARD);
+    motorRight->run(FORWARD);
   }
 }
 
 void pointTurnUpdate(){
 
-    motor1->setSpeed(64);
-    motor2->setSpeed(64);
+    motorLeft->setSpeed(64);
+    motorRight->setSpeed(64);
     delay(100);
   
   /*
   for(int i=orientation;i<targetDegrees;i+=(targetDegrees/10)){
     //Serial.println(i);
-    motor1->setSpeed(128);
-    motor2->setSpeed(128);
+    motorLeft->setSpeed(128);
+    motorRight->setSpeed(128);
     delay(50);
   }
   */
@@ -644,8 +670,8 @@ void pointTurnUpdate(){
 }
 
 void pointTurnExit(){
-  motor1->run(RELEASE);
-  motor2->run(RELEASE);
+  motorLeft->run(RELEASE);
+  motorRight->run(RELEASE);
 }
 
 void grabEnter(){
@@ -684,8 +710,8 @@ void evadeExit(){
 }
 
 void stopMotorsEnter(){
-  motor1->run(RELEASE);
-  motor2->run(RELEASE);
+  motorLeft->run(RELEASE);
+  motorRight->run(RELEASE);
   delay(1000);
 }
 
