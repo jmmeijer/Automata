@@ -1,6 +1,8 @@
 #include <FiniteStateMachine.h>
 #include <Wire.h>
+/*
 #include <Servo.h>
+*/
 #include <Adafruit_MotorShield.h>
 #include <Adafruit_TCS34725.h>
 #include <Adafruit_NeoPixel.h>
@@ -57,9 +59,10 @@ color scannedColor = NONE;
 
 bool scanned = false;
 uint8_t closestTarget = 0;
-
+/*
 Servo servoPan;
 Servo servoTilt;
+*/
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 Adafruit_DCMotor *motor1 = AFMS.getMotor(1);
 Adafruit_DCMotor *motor2 = AFMS.getMotor(2);
@@ -151,12 +154,12 @@ void setup() {
   for (uint8_t i = 1; i < iterations; i++){
     pingTimer[i] = pingTimer[i - 1] + pingInterval;
   }
-
+/*
   servoPan.attach(9,450,2450);
-  //servoTilt.attach(10,500,2400);
+  servoTilt.attach(10,500,2400);
   servoPan.write(90);
-  //servoTilt.write(90);
-
+  servoTilt.write(90);
+*/
   AFMS.begin();
   motor1->setSpeed(150);
   motor1->run(FORWARD);
@@ -286,7 +289,7 @@ delay(50);
 }
 
 void scanExit(){
-  servoPan.write(90);
+  //servoPan.write(90);
 }
 
 void setPixelOff(){
