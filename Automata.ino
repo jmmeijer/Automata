@@ -306,6 +306,10 @@ delay(50);
       }
 
     }else{
+
+
+      motorStateMachine.transitionTo(pointTurn);
+      
       //stateMachine.immediateTransitionTo(noop);
       stateMachine.transitionTo(navigate);
       //motorStateMachine.transitionTo(forward);
@@ -402,9 +406,18 @@ void navigateUpdate(){
     Serial.print(distanceCM);
     Serial.println("cm");
 
-    closestTarget = distanceCM;
     
-    if(closestTarget < 10){
+    if(distanceCM == 0 && closestTarget >= 9){
+      Serial.println("Lost Target!");
+
+      stateMachine.transitionTo(scan);
+      
+    }else{
+      closestTarget = distanceCM;
+    }
+    
+    
+    if(closestTarget < 5){
       Serial.println("nu gaan stoppen");
 
 
@@ -459,13 +472,13 @@ void detectUpdate(){
   g = green; g /= average;
   b = blue; b /= average;
 
-/*
+
  Serial.print("Clear:"); Serial.print(clear);
  Serial.print("\tRed:"); Serial.print(r);
  Serial.print("\tGreen:"); Serial.print(g);
  Serial.print("\tBlue:"); Serial.print(b);
  Serial.println();
- */
+ 
   guessColor(r,g,b);
   delay(100);
 
@@ -602,8 +615,8 @@ void forwardUpdate(){
     //closestTarget = 0;
   */
 // Just drive...
-    motorLeft->setSpeed(128);
-    motorRight->setSpeed(128);
+    motorLeft->setSpeed(64);
+    motorRight->setSpeed(64);
   
 }
 
@@ -658,8 +671,8 @@ void pointTurnEnter(){
 
 void pointTurnUpdate(){
 
-    motorLeft->setSpeed(64);
-    motorRight->setSpeed(64);
+    motorLeft->setSpeed(48);
+    motorRight->setSpeed(48);
     delay(100);
   
   /*
