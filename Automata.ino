@@ -22,15 +22,15 @@ const byte triggerPin = A0;
 const byte echoPin = A1;
 const byte maxDistance = 50; // TODO change to variable to increase scanning distance after fails
 
-const byte relayPin = 13;
+const byte relayPin = 8;
 
 const byte pixelPin = 6;
 
 const bool commonAnode = true;
 
-const byte buttonPin = 2;
+const byte buttonPin = 3;
 
-const byte lineSensorPin = 3;
+const byte lineSensorPin = 2;
 volatile byte state = LOW;
 
 int buttonState;
@@ -155,7 +155,7 @@ void setup() {
   Serial.print("Target color: ");
   Serial.println(targetColor);
 
-  //pinMode(relayPin, OUTPUT);
+  pinMode(relayPin, OUTPUT);
   //digitalWrite(relayPin, HIGH);
   
   pinMode(buttonPin, INPUT);
@@ -182,18 +182,21 @@ void setup() {
   motorRight->run(FORWARD);
   motorRight->run(RELEASE);
 
+  tcaselect(6);
   if (tcsFront.begin()) {
-   // Serial.println("Found TCS34725 sensor 1");
+   Serial.println("Found TCS34725 sensor 1");
   } else {
-    //Serial.println("No TCS34725 found ... check your connections");
+    Serial.println("No TCS34725 found ... check your connections");
     while (1); // halt!
   }
+  tcaselect(7);
   if (tcsBottom.begin()) {
-   // Serial.println("Found TCS34725 sensor 2");
+   Serial.println("Found TCS34725 sensor 2");
   } else {
-    //Serial.println("No TCS34725 found ... check your connections");
+    Serial.println("No TCS34725 found ... check your connections");
     while (1); // halt!
   }
+
   // Turn off LEDs
   tcaselect(6);
   tcsFront.setInterrupt(true);
@@ -205,7 +208,7 @@ void setup() {
 }
 
 void loop() {
-  
+
   
   int reading = digitalRead(buttonPin);
 
@@ -341,8 +344,8 @@ void trigger() {
   if (state == HIGH)
   {
     Serial.println("LineTracker is on the line");
-    stateMachine.immediateTransitionTo(noop); // TODO: evade after line interrupt
-    motorStateMachine.immediateTransitionTo(stopMotors);
+    //stateMachine.transitionTo(noop); // TODO: evade after line interrupt
+    //motorStateMachine.immediateTransitionTo(stopMotors);
   }
   else if (state == LOW)
   {
@@ -467,12 +470,13 @@ void detectUpdate(){
   delay(100);
 
   if(scannedColor == targetColor){
-    // TODO: transition to grab
+    Serial.println("Scanned targetcolor, grab it!");
     stateMachine.transitionTo(grab);
   }else if(scannedColor != NONE && scannedColor != targetColor){
-    // TODO: transition to evade
+    Serial.println("Scanned other color, evade it!");
     stateMachine.transitionTo(evade);
   }else{
+    Serial.println("Keep scanning! Or perhaps time to move...");
     // keep scanning or move closer towards target
   }
   
@@ -676,6 +680,7 @@ void pointTurnExit(){
 
 void grabEnter(){
     Serial.println("Enter grab state");
+    
 }
 
 void grabUpdate(){
