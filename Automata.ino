@@ -502,7 +502,7 @@ void guessColor(float r, float g, float b){
     Serial.print("RED");
     scannedColor = RED;
   }
-  else if ((r < 0.95) && (g > 1.4) && (b < 0.9)) {
+  else if ((r < 1.05) && (g > 1.3) && (b < 0.9)) {
     Serial.print("GREEN");
     scannedColor = GREEN;
   }
