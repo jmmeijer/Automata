@@ -49,6 +49,8 @@ uint8_t currentIteration = 0;
 unsigned int orientation = 0;
 unsigned int targetDegrees = 0;
 
+unsigned int numberMoves = 0;
+
 enum color {
   NONE,
   RED,
@@ -255,24 +257,24 @@ void scanEnter(){
 
 void scanUpdate() {
 
-delay(50);
-          int distanceCM = sonar.ping_cm();
-          
-          Serial.print("Ping: ");
-          Serial.print(distanceCM);
-          Serial.println("cm");
-          
-          if(distanceCM > 0){
-            Serial.println("Scanned");
-            scanned = true;
-            closestTarget = distanceCM;
-            
-          }
+  delay(50);
+    int distanceCM = sonar.ping_cm();
+    
+    Serial.print("Ping: ");
+    Serial.print(distanceCM);
+    Serial.println("cm");
+    
+    if(distanceCM > 0){
+      Serial.println("Scanned");
+      scanned = true;
+      closestTarget = distanceCM;
+      
+    }
 
     if (!scanned){
 
       targetDegrees = 18;
-      
+      /*
         for (uint8_t i = 0; i < iterations; i++) {
 
           int currentPos = i*18;
@@ -281,30 +283,14 @@ delay(50);
             //Serial.println(pos);
             //servoPan.write(pos);
             //delay(15);
-            
+            */
             motorStateMachine.transitionTo(pointTurn);
+            /*
           }
-
-
-          
-          //TODO: if statement on signal from pointTurn 
-          /*
-        if (millis() >= pingTimer[i]) {
-          pingTimer[i] += pingInterval * iterations;
-          if (i == 0 && currentIteration == iterations - 1) oneSensorCycle();
-          sonar.timer_stop();
-          currentIteration = i;
-          cm[currentIteration] = 0;
-          Serial.print("Sending Ping");
-          Serial.println(currentIteration);
-          sonar.ping_timer(echoCheck);
-          delay(pingInterval);
-        }
-        */
         
         
       }
-
+*/
     }else{
 
 
@@ -409,6 +395,8 @@ void navigateUpdate(){
     
     if(distanceCM == 0 && closestTarget >= 9){
       Serial.println("Lost Target!");
+
+      scanned = false;
 
       stateMachine.transitionTo(scan);
       
@@ -636,8 +624,8 @@ void backwardEnter(){
 }
 
 void backwardUpdate(){
-    motorLeft->setSpeed(128);
-    motorRight->setSpeed(128);
+    motorLeft->setSpeed(64);
+    motorRight->setSpeed(64);
 }
 
 void backwardExit(){
@@ -659,6 +647,11 @@ void backwardExit(){
 void pointTurnEnter(){
   Serial.print("targetDegrees: ");
   Serial.println(targetDegrees);
+
+  currentMillis = millis();
+
+  Serial.print("currentMillis: ");
+  Serial.println(currentMillis);
   
   if( targetDegrees > 0 && targetDegrees <= 180 ){
     motorLeft->run(FORWARD);
@@ -673,8 +666,7 @@ void pointTurnUpdate(){
 
     motorLeft->setSpeed(48);
     motorRight->setSpeed(48);
-    delay(100);
-  
+     
   /*
   for(int i=orientation;i<targetDegrees;i+=(targetDegrees/10)){
     //Serial.println(i);
@@ -683,7 +675,11 @@ void pointTurnUpdate(){
     delay(50);
   }
   */
-  motorStateMachine.immediateTransitionTo(noop);
+
+
+    //motorStateMachine.immediateTransitionTo(noop);
+
+  
 }
 
 void pointTurnExit(){
@@ -708,17 +704,63 @@ void grabExit(){
 
 void evadeEnter(){
   Serial.println("Enter evade state");
+  targetDegrees = 18;
+  numberMoves = 4;
+
+  currentMillis = millis();
+
+  Serial.print("currentMillis: ");
+  Serial.println(currentMillis);
+  
 }
 
 void evadeUpdate(){
   // assuming motors stopped
-  motorStateMachine.transitionTo(backward);
-  delay(400);
-  motorStateMachine.transitionTo(pointTurn);
-  delay(400);
-  motorStateMachine.transitionTo(forward);
-  delay(400);
-  motorStateMachine.transitionTo(stopMotors);
+  switch(numberMoves){
+    case 4:
+      Serial.println("Go backwards");
+      motorStateMachine.immediateTransitionTo(backward);
+      delay(600);
+      // decrease number of moves to make
+      numberMoves--;
+      break;
+    case 3:
+        Serial.println("Turn a bit");
+
+        motorStateMachine.immediateTransitionTo(pointTurn);
+         /*
+          * 1200 ms = 180 deg
+          * 600 ms = 90 deg
+          * 400 ms = 60 deg
+          * 200 ms = 30 deg
+          */
+        delay(350);
+        numberMoves--;
+        break;
+        
+    case 2:
+      Serial.println("Move forward");
+      motorStateMachine.immediateTransitionTo(forward);
+      delay(800);
+      // decrease number of moves to make
+      numberMoves--;
+      break;
+    case 1:
+      motorStateMachine.transitionTo(stopMotors);
+      // decrease number of moves to make
+      numberMoves--;
+      break;
+    case 0:
+      Serial.println("start doing something else");
+      // do back to regular program depending on holding can
+      break;
+    default:
+      Serial.println("Oops, not supposed to get here!");
+      // statements
+  }
+
+
+
 
   // TODO: check for other object
 }
