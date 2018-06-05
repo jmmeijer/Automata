@@ -47,7 +47,7 @@ unsigned int cm[iterations];
 uint8_t currentIteration = 0;
 
 unsigned int orientation = 0;
-unsigned int targetDegrees = 0;
+int targetDegrees = 0;
 
 unsigned int numberMoves = 0;
 
@@ -61,12 +61,11 @@ enum color {
 const color targetColor = RED;
 color scannedColor = NONE;
 
+bool inBounds = true;
 bool scanned = false;
+bool grabbedTarget = false;
 uint8_t closestTarget = 0;
-/*
-Servo servoPan;
-Servo servoTilt;
-*/
+
 Adafruit_MotorShield AFMS = Adafruit_MotorShield(); 
 Adafruit_DCMotor *motorLeft = AFMS.getMotor(1);
 Adafruit_DCMotor *motorRight = AFMS.getMotor(2);
@@ -83,7 +82,6 @@ void tcaselect(uint8_t i) {
   Wire.write(1 << i);
   Wire.endTransmission();  
 }
-
 
 // function prototypes for reference in function 
 void noopUpdate();
@@ -257,50 +255,32 @@ void scanEnter(){
 
 void scanUpdate() {
 
-  delay(50);
+  if (!scanned){
+
+    delay(100);
     int distanceCM = sonar.ping_cm();
+    delay(100);
     
     Serial.print("Ping: ");
     Serial.print(distanceCM);
     Serial.println("cm");
-    
+      
     if(distanceCM > 0){
-      Serial.println("Scanned");
+      Serial.println("Scanned something!");
       scanned = true;
       closestTarget = distanceCM;
-      
+    }
+    
+    if(!motorStateMachine.isInState( pointTurn )){
+      targetDegrees = 6;
+      motorStateMachine.transitionTo( pointTurn );
     }
 
-    if (!scanned){
-
-      targetDegrees = 18;
-      /*
-        for (uint8_t i = 0; i < iterations; i++) {
-
-          int currentPos = i*18;
-          Serial.println(currentPos);
-          for (int pos = currentPos; pos <= currentPos+18; pos += 18) {
-            //Serial.println(pos);
-            //servoPan.write(pos);
-            //delay(15);
-            */
-            motorStateMachine.transitionTo(pointTurn);
-            /*
-          }
-        
-        
-      }
-*/
-    }else{
-
-
+  }else{
+      targetDegrees = 6;
       motorStateMachine.transitionTo(pointTurn);
-      
-      //stateMachine.immediateTransitionTo(noop);
+      Serial.println("Target aquired, navigate!");
       stateMachine.transitionTo(navigate);
-      //motorStateMachine.transitionTo(forward);
-      Serial.println("scanned!");
-      
     }
   
 }
@@ -334,12 +314,14 @@ void trigger() {
   if (state == HIGH)
   {
     Serial.println("LineTracker is on the line");
+    inBounds = true;
     //stateMachine.transitionTo(noop); // TODO: evade after line interrupt
     //motorStateMachine.immediateTransitionTo(stopMotors);
   }
   else if (state == LOW)
   {
     Serial.println("Linetracker is not on the line");
+    inBounds = false;
   }
 }
 
@@ -474,7 +456,13 @@ void detectUpdate(){
     Serial.println("Scanned targetcolor, grab it!");
     stateMachine.transitionTo(grab);
   }else if(scannedColor != NONE && scannedColor != targetColor){
+    
     Serial.println("Scanned other color, evade it!");
+
+    // reset scanned & closestTarget
+    scanned = false;
+    closestTarget = 0;
+    
     stateMachine.transitionTo(evade);
   }else{
     Serial.println("Keep scanning! Or perhaps time to move...");
@@ -486,7 +474,7 @@ void detectUpdate(){
 void guessColor(float r, float g, float b){
   Serial.print("Scanned color: ");
   
-  if ((r > 1.4) && (g < 0.9) && (b < 0.9)) {
+  if ((r > 1.8) && (g < 0.7) && (b < 0.6)) {
     Serial.print("RED");
     scannedColor = RED;
   }
@@ -653,10 +641,10 @@ void pointTurnEnter(){
   Serial.print("currentMillis: ");
   Serial.println(currentMillis);
   
-  if( targetDegrees > 0 && targetDegrees <= 180 ){
+  if( (targetDegrees > 0 && targetDegrees <= 180) || (targetDegrees < -180 && targetDegrees <= -360) ){
     motorLeft->run(FORWARD);
     motorRight->run(BACKWARD);
-  }else if( targetDegrees > 180 && targetDegrees <= 360){
+  }else if( (targetDegrees > 180 && targetDegrees <= 360) || (targetDegrees < 0 && targetDegrees <= -180) ){
     motorLeft->run(BACKWARD);
     motorRight->run(FORWARD);
   }
@@ -664,20 +652,21 @@ void pointTurnEnter(){
 
 void pointTurnUpdate(){
 
-    motorLeft->setSpeed(48);
-    motorRight->setSpeed(48);
-     
+  motorLeft->setSpeed(48);
+  motorRight->setSpeed(48);
+
+  for (int pos = orientation; pos <= orientation+targetDegrees; pos += 1) {
+    delay(8);
+  }
+
   /*
-  for(int i=orientation;i<targetDegrees;i+=(targetDegrees/10)){
-    //Serial.println(i);
-    motorLeft->setSpeed(128);
-    motorRight->setSpeed(128);
+  for(int i=0;i<targetDegrees;i+=(targetDegrees/10)){
     delay(50);
   }
   */
 
 
-    //motorStateMachine.immediateTransitionTo(noop);
+   motorStateMachine.immediateTransitionTo(noop);
 
   
 }
@@ -694,6 +683,7 @@ void grabEnter(){
 
 void grabUpdate(){
   digitalWrite(relayPin, HIGH); // in update state?
+  grabbedTarget = true;
   //TODO: check if grab succeeded, possibly by using distance sensor
   
 }
@@ -705,7 +695,7 @@ void grabExit(){
 void evadeEnter(){
   Serial.println("Enter evade state");
   targetDegrees = 18;
-  numberMoves = 4;
+  numberMoves = 2;
 
   currentMillis = millis();
 
@@ -717,16 +707,16 @@ void evadeEnter(){
 void evadeUpdate(){
   // assuming motors stopped
   switch(numberMoves){
-    case 4:
+    case 2:
       Serial.println("Go backwards");
       motorStateMachine.immediateTransitionTo(backward);
       delay(600);
       // decrease number of moves to make
       numberMoves--;
       break;
-    case 3:
+    case 1:
         Serial.println("Turn a bit");
-
+        targetDegrees = 45;
         motorStateMachine.immediateTransitionTo(pointTurn);
          /*
           * 1200 ms = 180 deg
@@ -734,25 +724,13 @@ void evadeUpdate(){
           * 400 ms = 60 deg
           * 200 ms = 30 deg
           */
-        delay(350);
+        //delay(350);
         numberMoves--;
         break;
-        
-    case 2:
-      Serial.println("Move forward");
-      motorStateMachine.immediateTransitionTo(forward);
-      delay(800);
-      // decrease number of moves to make
-      numberMoves--;
-      break;
-    case 1:
-      motorStateMachine.transitionTo(stopMotors);
-      // decrease number of moves to make
-      numberMoves--;
-      break;
     case 0:
       Serial.println("start doing something else");
-      // do back to regular program depending on holding can
+      stateMachine.transitionTo(scan);
+      motorStateMachine.transitionTo(stopMotors);
       break;
     default:
       Serial.println("Oops, not supposed to get here!");
