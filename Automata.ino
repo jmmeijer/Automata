@@ -49,6 +49,7 @@ uint8_t currentIteration = 0;
 unsigned int orientation = 0;
 int targetDegrees = 0;
 
+
 unsigned int numberMoves = 0;
 
 enum color {
@@ -408,6 +409,7 @@ void navigateExit(){
 void detectEnter(){
   // Reset scanned color
   scannedColor = NONE;
+  currentIteration = 0;
 }
 
 /*
@@ -467,8 +469,18 @@ void detectUpdate(){
   }else{
     Serial.println("Keep scanning! Or perhaps time to move...");
     // keep scanning or move closer towards target
+    currentIteration++;
   }
-  
+  // Try to get color 5 times...
+  if(currentIteration >= 10){
+    // ...before moving
+    stateMachine.transitionTo(scan);
+  else if(currentIteration == 5){
+    motorStateMachine.immediateTransitionTo(forward);
+    delay(100);
+    // reset iterations and try again
+    //currentIteration = 0;
+  }
 }
 
 void guessColor(float r, float g, float b){
@@ -498,6 +510,8 @@ void guessColor(float r, float g, float b){
 
 void detectExit(){
   tcsFront.setInterrupt(true);  // turn off LED
+  // reset iterations
+  // currentIteration = 0;
 }
 
 /*
