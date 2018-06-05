@@ -20,7 +20,7 @@ const byte distanceBetweenWheels = 183; // in mm
 const byte iterations = 20;
 const byte triggerPin = A0;
 const byte echoPin = A1;
-const byte maxDistance = 50; // TODO change to variable to increase scanning distance after fails
+byte maxDistance = 50;
 
 const byte relayPin = 8;
 
@@ -252,6 +252,7 @@ void noopUpdate() {
 void scanEnter(){
   Serial.println("Enter Scanning");
   ledStateMachine.immediateTransitionTo(yellow);
+  currentIteration = 0;
 }
 
 void scanUpdate() {
@@ -277,6 +278,16 @@ void scanUpdate() {
       motorStateMachine.transitionTo( pointTurn );
     }
 
+    // Try to get color 5 times...
+    if(currentIteration >= 40){
+      motorStateMachine.immediateTransitionTo(forward);
+      delay(400);
+    }
+    else if(currentIteration == 20){
+      maxDistance = 60;
+    }
+    currentIteration++;
+
   }else{
       targetDegrees = 6;
       motorStateMachine.transitionTo(pointTurn);
@@ -287,7 +298,8 @@ void scanUpdate() {
 }
 
 void scanExit(){
-  //servoPan.write(90);
+  // reset iterations
+  currentIteration = 0;
 }
 
 void setPixelOff(){
@@ -475,6 +487,7 @@ void detectUpdate(){
   if(currentIteration >= 10){
     // ...before moving
     stateMachine.transitionTo(scan);
+  }
   else if(currentIteration == 5){
     motorStateMachine.immediateTransitionTo(forward);
     delay(100);
@@ -511,7 +524,7 @@ void guessColor(float r, float g, float b){
 void detectExit(){
   tcsFront.setInterrupt(true);  // turn off LED
   // reset iterations
-  // currentIteration = 0;
+  currentIteration = 0;
 }
 
 /*
