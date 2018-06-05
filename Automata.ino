@@ -279,11 +279,14 @@ void scanUpdate() {
     }
 
     // Try to get color 5 times...
-    if(currentIteration >= 40){
+    if(currentIteration >= 160){
       motorStateMachine.immediateTransitionTo(forward);
-      delay(400);
+      delay(1200);
+      motorStateMachine.immediateTransitionTo(stopMotors);
+      // reset iteration
+      currentIteration = 0;
     }
-    else if(currentIteration == 20){
+    else if(currentIteration == 80){
       maxDistance = 60;
     }
     currentIteration++;
@@ -481,19 +484,22 @@ void detectUpdate(){
   }else{
     Serial.println("Keep scanning! Or perhaps time to move...");
     // keep scanning or move closer towards target
+
+    // Try to get color 5 times...
+    if(currentIteration >= 10){
+      // ...before moving
+      stateMachine.transitionTo(scan);
+    }
+    else if(currentIteration == 5){
+      motorStateMachine.immediateTransitionTo(forward);
+      delay(100);
+      motorStateMachine.immediateTransitionTo(stopMotors);
+      // reset iterations and try again
+      //currentIteration = 0;
+    }
     currentIteration++;
   }
-  // Try to get color 5 times...
-  if(currentIteration >= 10){
-    // ...before moving
-    stateMachine.transitionTo(scan);
-  }
-  else if(currentIteration == 5){
-    motorStateMachine.immediateTransitionTo(forward);
-    delay(100);
-    // reset iterations and try again
-    //currentIteration = 0;
-  }
+
 }
 
 void guessColor(float r, float g, float b){
